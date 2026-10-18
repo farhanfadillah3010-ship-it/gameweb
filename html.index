@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Chamber</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000;
+      font-family: 'Courier New', Courier, monospace;
+      color: #888;
+    }
+
+    #start-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      background: #050505;
+      cursor: pointer;
+    }
+
+    #start-screen h1 {
+      color: #aaa;
+      font-size: 1.8rem;
+      letter-spacing: 4px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      animation: pulse 2s infinite;
+    }
+
+    #start-screen p {
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, #111 0%, #000 70%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .flashlight {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: radial-gradient(circle 180px at var(--x, 50%) var(--y, 50%), transparent 0%, rgba(0,0,0,0.98) 100%);
+      z-index: 2;
+    }
+
+    #scene {
+      text-align: center;
+      z-index: 1;
+      max-width: 600px;
+      padding: 20px;
+    }
+
+    #interactive-object {
+      display: inline-block;
+      margin-top: 30px;
+      padding: 15px 30px;
+      border: 1px solid #333;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #080808;
+    }
+
+    #interactive-object:hover {
+      border-color: #888;
+      color: #ccc;
+      box-shadow: 0 0 10px rgba(255,255,255,0.05);
+    }
+
+    #jumpscare-overlay {
+      position: absolute;
+      inset: 0;
+      background-color: #000;
+      z-index: 100;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #jumpscare-svg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: contrast(200%) brightness(150%);
+    }
+
+    .shake {
+      animation: heavy-shake 0.05s infinite;
+    }
+
+    .strobe {
+      animation: strobe-bg 0.04s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.9; }
+    }
+
+    @keyframes heavy-shake {
+      0% { transform: translate(0, 0) scale(1.2); }
+      25% { transform: translate(-30px, 20px) scale(1.25) rotate(-3deg); }
+      50% { transform: translate(25px, -15px) scale(1.18) rotate(3deg); }
+      75% { transform: translate(-20px, -25px) scale(1.22) rotate(-1deg); }
+      100% { transform: translate(30px, 15px) scale(1.2) rotate(2deg); }
+    }
+
+    @keyframes strobe-bg {
+      0% { background-color: #f00; }
+      25% { background-color: #000; }
+      50% { background-color: #fff; }
+      75% { background-color: #000; }
+      100% { background-color: #800; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="start-screen">
+    <h1>Jangan Menoleh</h1>
+    <p>[ Klik di mana saja untuk memulai | Pakai Headphone ]</p>
+  </div>
+
+  <div id="game-container">
+    <div class="flashlight" id="flashlight"></div>
+    <div id="scene">
+      <p id="story-text">Ruangan ini gelap gulita. Hanya ada satu tombol usang di depanmu.</p>
+      <div id="interactive-object">Sentuh Tombol</div>
+    </div>
+  </div>
+
+  <div id="jumpscare-overlay">
+    <svg id="jumpscare-svg" viewBox="0 0 500 500">
+      <rect width="500" height="500" fill="#000" />
+      <!-- Face base -->
+      <path d="M 100 150 Q 250 20 400 150 Q 450 350 250 480 Q 50 350 100 150 Z" fill="#fff" opacity="0.85" />
+      <!-- Hollow eyes -->
+      <ellipse cx="180" cy="200" rx="45" ry="55" fill="#000" />
+      <ellipse cx="320" cy="200" rx="45" ry="55" fill="#000" />
+      <!-- Pinpoint red pupils -->
+      <circle cx="180" cy="205" r="4" fill="#f00" />
+      <circle cx="320" cy="205" r="4" fill="#f00" />
+      <!-- Distorted mouth -->
+      <path d="M 150 320 Q 250 260 350 320 Q 370 440 250 450 Q 130 440 150 320 Z" fill="#000" />
+      <!-- Sharp teeth -->
+      <polygon points="170,320 185,350 200,320" fill="#fff" />
+      <polygon points="210,320 225,355 240,320" fill="#fff" />
+      <polygon points="250,320 265,350 280,320" fill="#fff" />
+      <polygon points="290,320 305,355 320,320" fill="#fff" />
+      <polygon points="330,320 345,350 360,320" fill="#fff" />
+    </svg>
+  </div>
+
+  <script>
+    let audioCtx = null;
+    let ambientOsc = null;
+    let stepCount = 0;
+
+    const startScreen = document.getElementById('start-screen');
+    const flashlight = document.getElementById('flashlight');
+    const interactiveObject = document.getElementById('interactive-object');
+    const storyText = document.getElementById('story-text');
+    const jumpscareOverlay = document.getElementById('jumpscare-overlay');
+
+    // Tracking flashlight mouse movement
+    window.addEventListener('mousemove', (e) => {
+      flashlight.style.setProperty('--x', e.clientX + 'px');
+      flashlight.style.setProperty('--y', e.clientY + 'px');
+    });
+
+    // Start Audio Context on user interaction
+    startScreen.addEventListener('click', () => {
+      startScreen.style.display = 'none';
+      initAudio();
+    });
+
+    function initAudio() {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Low frequency drone for ambient horror atmosphere
+      ambientOsc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      ambientOsc.type = 'sawtooth';
+      ambientOsc.frequency.setValueAtTime(45, audioCtx.currentTime); // Low pitch
+      
+      gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      
+      ambientOsc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      ambientOsc.start();
+    }
+
+    function playCreepySound() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 1.5);
+      
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 1.5);
+    }
+
+    function triggerJumpscareAudio() {
+      if (!audioCtx) return;
+
+      // High-pitched screech oscillator
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.type = 'sawtooth';
+      osc1.frequency.setValueAtTime(2800, audioCtx.currentTime);
+      osc1.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 1.2);
+      gain1.gain.setValueAtTime(1.0, audioCtx.currentTime);
+
+      // Low burst noise via buffer
+      const bufferSize = audioCtx.sampleRate * 1.5;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      
+      const whiteNoise = audioCtx.createBufferSource();
+      whiteNoise.buffer = buffer;
+      
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+      noiseGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      
+      whiteNoise.connect(noiseGain);
+      noiseGain.connect(audioCtx.destination);
+
+      osc1.start();
+      whiteNoise.start();
+    }
+
+    // Progression mechanics
+    interactiveObject.addEventListener('click', () => {
+      stepCount++;
+      playCreepySound();
+
+      if (stepCount === 1) {
+        storyText.textContent = "Suara bisikan terdengar dari sudut gelap. Tombol terasa dingin.";
+        interactiveObject.textContent = "Tekan Lagi";
+      } else if (stepCount === 2) {
+        storyText.textContent = "Lampu mendadak redup. Sesuatu bergerak mendekatimu...";
+        interactiveObject.textContent = "Tekan Terakhir kali";
+      } else if (stepCount === 3) {
+        interactiveObject.style.display = 'none';
+        storyText.textContent = "Diam.";
+        
+        // Delay before triggering jumpscare to build fake tension
+        setTimeout(() => {
+          triggerJumpscare();
+        }, 2000);
+      }
+    });
+
+    function triggerJumpscare() {
+      jumpscareOverlay.style.display = 'flex';
+      jumpscareOverlay.classList.add('strobe', 'shake');
+      
+      if (ambientOsc) ambientOsc.stop();
+      triggerJumpscareAudio();
+
+      // Trigger device vibration if supported
+      if ("vibrate" in navigator) {
+        navigator.vibrate([500, 100, 500, 100, 800]);
+      }
+    }
+  </script>
+</body>
+</html>
+

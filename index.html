@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Chamber</title>
+  <title>Lorong Gelap</title>
   <style>
     * {
       margin: 0;
@@ -16,7 +16,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background-color: #000;
+      background-color: #050505;
       font-family: 'Courier New', Courier, monospace;
       color: #888;
     }
@@ -28,22 +28,21 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      z-index: 10;
-      background: #050505;
+      z-index: 20;
+      background: #020202;
       cursor: pointer;
     }
 
     #start-screen h1 {
-      color: #aaa;
-      font-size: 1.8rem;
-      letter-spacing: 4px;
-      margin-bottom: 20px;
+      color: #bbb;
+      font-size: 1.6rem;
+      letter-spacing: 3px;
+      margin-bottom: 15px;
       text-transform: uppercase;
-      animation: pulse 2s infinite;
     }
 
     #start-screen p {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: #555;
     }
 
@@ -51,43 +50,49 @@
       position: relative;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle, #111 0%, #000 70%);
+      background: #0a0a0a;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-    }
-
-    .flashlight {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      background: radial-gradient(circle 180px at var(--x, 50%) var(--y, 50%), transparent 0%, rgba(0,0,0,0.98) 100%);
-      z-index: 2;
-    }
-
-    #scene {
-      text-align: center;
-      z-index: 1;
-      max-width: 600px;
       padding: 20px;
     }
 
-    #interactive-object {
-      display: inline-block;
-      margin-top: 30px;
-      padding: 15px 30px;
-      border: 1px solid #333;
+    #ui-bar {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
       color: #666;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      background: #080808;
+      border-bottom: 1px solid #222;
+      padding-bottom: 10px;
+      z-index: 5;
     }
 
-    #interactive-object:hover {
-      border-color: #888;
-      color: #ccc;
-      box-shadow: 0 0 10px rgba(255,255,255,0.05);
+    #canvas-container {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      height: 300px;
+      background: #000;
+      border: 1px solid #222;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    #controls {
+      width: 100%;
+      max-width: 600px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #444;
+      z-index: 5;
     }
 
     #jumpscare-overlay {
@@ -104,204 +109,290 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      filter: contrast(200%) brightness(150%);
+      filter: contrast(220%) brightness(140%);
     }
 
     .shake {
-      animation: heavy-shake 0.05s infinite;
+      animation: heavy-shake 0.04s infinite;
     }
 
     .strobe {
-      animation: strobe-bg 0.04s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.3; }
-      50% { opacity: 0.9; }
+      animation: strobe-bg 0.03s infinite;
     }
 
     @keyframes heavy-shake {
-      0% { transform: translate(0, 0) scale(1.2); }
-      25% { transform: translate(-30px, 20px) scale(1.25) rotate(-3deg); }
-      50% { transform: translate(25px, -15px) scale(1.18) rotate(3deg); }
-      75% { transform: translate(-20px, -25px) scale(1.22) rotate(-1deg); }
-      100% { transform: translate(30px, 15px) scale(1.2) rotate(2deg); }
+      0% { transform: translate(0, 0) scale(1.25); }
+      25% { transform: translate(-35px, 25px) scale(1.3) rotate(-4deg); }
+      50% { transform: translate(30px, -20px) scale(1.2) rotate(4deg); }
+      75% { transform: translate(-25px, -30px) scale(1.28) rotate(-2deg); }
+      100% { transform: translate(35px, 20px) scale(1.25) rotate(3deg); }
     }
 
     @keyframes strobe-bg {
-      0% { background-color: #f00; }
+      0% { background-color: #100; }
       25% { background-color: #000; }
       50% { background-color: #fff; }
-      75% { background-color: #000; }
-      100% { background-color: #800; }
+      75% { background-color: #200; }
+      100% { background-color: #000; }
     }
   </style>
 </head>
 <body>
 
   <div id="start-screen">
-    <h1>Jangan Menoleh</h1>
-    <p>[ Klik di mana saja untuk memulai | Pakai Headphone ]</p>
+    <h1>Eksplorasi Lorong</h1>
+    <p>[ Klik untuk Mulai | Gunakan Spasi / Tap untuk Melompat ]</p>
   </div>
 
   <div id="game-container">
-    <div class="flashlight" id="flashlight"></div>
-    <div id="scene">
-      <p id="story-text">Ruangan ini gelap gulita. Hanya ada satu tombol usang di depanmu.</p>
-      <div id="interactive-object">Sentuh Tombol</div>
+    <div id="ui-bar">
+      <span>JARAK: <span id="distance">0</span>m</span>
+      <span>STATUS: AMAN</span>
+    </div>
+
+    <div id="canvas-container">
+      <canvas id="gameCanvas" width="600" height="300"></canvas>
+    </div>
+
+    <div id="controls">
+      Tekan Spasi atau Sentuh Layar untuk Melompati Rintangan
     </div>
   </div>
 
+  <!-- Kuntilanak Jumpscare Overlay -->
   <div id="jumpscare-overlay">
     <svg id="jumpscare-svg" viewBox="0 0 500 500">
       <rect width="500" height="500" fill="#000" />
-      <!-- Face base -->
-      <path d="M 100 150 Q 250 20 400 150 Q 450 350 250 480 Q 50 350 100 150 Z" fill="#fff" opacity="0.85" />
-      <!-- Hollow eyes -->
-      <ellipse cx="180" cy="200" rx="45" ry="55" fill="#000" />
-      <ellipse cx="320" cy="200" rx="45" ry="55" fill="#000" />
-      <!-- Pinpoint red pupils -->
-      <circle cx="180" cy="205" r="4" fill="#f00" />
-      <circle cx="320" cy="205" r="4" fill="#f00" />
-      <!-- Distorted mouth -->
-      <path d="M 150 320 Q 250 260 350 320 Q 370 440 250 450 Q 130 440 150 320 Z" fill="#000" />
-      <!-- Sharp teeth -->
-      <polygon points="170,320 185,350 200,320" fill="#fff" />
-      <polygon points="210,320 225,355 240,320" fill="#fff" />
-      <polygon points="250,320 265,350 280,320" fill="#fff" />
-      <polygon points="290,320 305,355 320,320" fill="#fff" />
-      <polygon points="330,320 345,350 360,320" fill="#fff" />
+      <!-- Kain Kafan / Badan Pucat -->
+      <path d="M 120 120 Q 250 40 380 120 Q 440 380 250 490 Q 60 380 120 120 Z" fill="#e0e8e0" opacity="0.9" />
+      <!-- Rambut Hitam Panjang Berantakan Menutupi Samping -->
+      <path d="M 100 100 Q 150 250 90 400 Q 120 420 160 300 Q 140 150 180 100 Z" fill="#0a0a0a" />
+      <path d="M 400 100 Q 350 250 410 400 Q 380 420 340 300 Q 360 150 320 100 Z" fill="#0a0a0a" />
+      <!-- Mata Kosong Hitam Pekat & Lingkaran Merah -->
+      <ellipse cx="180" cy="190" rx="40" ry="50" fill="#000" />
+      <ellipse cx="320" cy="190" rx="40" ry="50" fill="#000" />
+      <circle cx="180" cy="195" r="5" fill="#ff0000" />
+      <circle cx="320" cy="195" r="5" fill="#ff0000" />
+      <!-- Mulut Menganga Lebar Mengerikan -->
+      <path d="M 160 300 Q 250 220 340 300 Q 380 440 250 455 Q 120 440 160 300 Z" fill="#000" />
+      <!-- Gigi Runcing Tajam Berdarah -->
+      <polygon points="180,300 195,340 210,300" fill="#fff" />
+      <polygon points="215,300 230,345 245,300" fill="#fff" />
+      <polygon points="255,300 270,340 285,300" fill="#fff" />
+      <polygon points="290,300 305,345 320,300" fill="#fff" />
     </svg>
   </div>
 
   <script>
-    let audioCtx = null;
-    let ambientOsc = null;
-    let stepCount = 0;
-
     const startScreen = document.getElementById('start-screen');
-    const flashlight = document.getElementById('flashlight');
-    const interactiveObject = document.getElementById('interactive-object');
-    const storyText = document.getElementById('story-text');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const distanceEl = document.getElementById('distance');
     const jumpscareOverlay = document.getElementById('jumpscare-overlay');
 
-    // Tracking flashlight mouse movement
-    window.addEventListener('mousemove', (e) => {
-      flashlight.style.setProperty('--x', e.clientX + 'px');
-      flashlight.style.setProperty('--y', e.clientY + 'px');
-    });
+    let audioCtx = null;
+    let gameRunning = false;
+    let distance = 0;
+    let scoreTimer = null;
 
-    // Start Audio Context on user interaction
+    // Player Object
+    let player = {
+      x: 60,
+      y: 220,
+      width: 24,
+      height: 40,
+      vy: 0,
+      gravity: 0.8,
+      jumpForce: -12,
+      grounded: true
+    };
+
+    // Obstacles Array
+    let obstacles = [];
+    let obstacleTimer = 0;
+    const triggerDistance = 45; // Jumpscare triggers at 45 meters
+
     startScreen.addEventListener('click', () => {
       startScreen.style.display = 'none';
       initAudio();
+      startGame();
     });
 
     function initAudio() {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      
-      // Low frequency drone for ambient horror atmosphere
-      ambientOsc = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      
-      ambientOsc.type = 'sawtooth';
-      ambientOsc.frequency.setValueAtTime(45, audioCtx.currentTime); // Low pitch
-      
-      gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
-      
-      ambientOsc.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      
-      ambientOsc.start();
     }
 
-    function playCreepySound() {
+    function playJumpSound() {
       if (!audioCtx) return;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 1.5);
-      
-      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
-      
+      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
-      
       osc.start();
-      osc.stop(audioCtx.currentTime + 1.5);
+      osc.stop(audioCtx.currentTime + 0.15);
     }
 
     function triggerJumpscareAudio() {
       if (!audioCtx) return;
 
-      // High-pitched screech oscillator
-      const osc1 = audioCtx.createOscillator();
-      const gain1 = audioCtx.createGain();
-      osc1.type = 'sawtooth';
-      osc1.frequency.setValueAtTime(2800, audioCtx.currentTime);
-      osc1.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 1.2);
-      gain1.gain.setValueAtTime(1.0, audioCtx.currentTime);
+      // Screech
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(3200, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(500, audioCtx.currentTime + 1.5);
+      gain.gain.setValueAtTime(1.0, audioCtx.currentTime);
 
-      // Low burst noise via buffer
+      // Noise burst
       const bufferSize = audioCtx.sampleRate * 1.5;
       const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-      const output = buffer.getChannelData(0);
+      const data = buffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
-        output[i] = Math.random() * 2 - 1;
+        data[i] = Math.random() * 2 - 1;
       }
-      
-      const whiteNoise = audioCtx.createBufferSource();
-      whiteNoise.buffer = buffer;
-      
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
       const noiseGain = audioCtx.createGain();
       noiseGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
       noiseGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
 
-      osc1.connect(gain1);
-      gain1.connect(audioCtx.destination);
-      
-      whiteNoise.connect(noiseGain);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      noise.connect(noiseGain);
       noiseGain.connect(audioCtx.destination);
 
-      osc1.start();
-      whiteNoise.start();
+      osc.start();
+      noise.start();
     }
 
-    // Progression mechanics
-    interactiveObject.addEventListener('click', () => {
-      stepCount++;
-      playCreepySound();
-
-      if (stepCount === 1) {
-        storyText.textContent = "Suara bisikan terdengar dari sudut gelap. Tombol terasa dingin.";
-        interactiveObject.textContent = "Tekan Lagi";
-      } else if (stepCount === 2) {
-        storyText.textContent = "Lampu mendadak redup. Sesuatu bergerak mendekatimu...";
-        interactiveObject.textContent = "Tekan Terakhir kali";
-      } else if (stepCount === 3) {
-        interactiveObject.style.display = 'none';
-        storyText.textContent = "Diam.";
-        
-        // Delay before triggering jumpscare to build fake tension
-        setTimeout(() => {
-          triggerJumpscare();
-        }, 2000);
+    // Controls
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        jump();
       }
     });
 
+    canvas.addEventListener('click', () => {
+      jump();
+    });
+
+    function jump() {
+      if (!gameRunning) return;
+      if (player.grounded) {
+        player.vy = player.jumpForce;
+        player.grounded = false;
+        playJumpSound();
+      }
+    }
+
+    function startGame() {
+      gameRunning = true;
+      distance = 0;
+      obstacles = [];
+      
+      scoreTimer = setInterval(() => {
+        if (!gameRunning) return;
+        distance++;
+        distanceEl.textContent = distance;
+
+        // Trigger jumpscare condition
+        if (distance >= triggerDistance) {
+          triggerJumpscare();
+        }
+      }, 150);
+
+      requestAnimationFrame(update);
+    }
+
+    function update() {
+      if (!gameRunning) return;
+
+      // Clear Canvas
+      ctx.fillStyle = '#050505';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Floor Line
+      ctx.strokeStyle = '#222';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, 260);
+      ctx.lineTo(600, 260);
+      ctx.stroke();
+
+      // Update Player Physics
+      player.vy += player.gravity;
+      player.y += player.vy;
+
+      if (player.y > 220) {
+        player.y = 220;
+        player.vy = 0;
+        player.grounded = true;
+      }
+
+      // Draw Player (Silhouette figure)
+      ctx.fillStyle = '#666';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+
+      // Spawn Obstacles
+      obstacleTimer++;
+      if (obstacleTimer > 90) {
+        obstacles.push({
+          x: canvas.width,
+          y: 230,
+          width: 20,
+          height: 30
+        });
+        obstacleTimer = 0;
+      }
+
+      // Update & Draw Obstacles
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        let obs = obstacles[i];
+        obs.x -= 5;
+
+        ctx.fillStyle = '#333';
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+        // Collision Check
+        if (
+          player.x < obs.x + obs.width &&
+          player.x + player.width > obs.x &&
+          player.y < obs.y + obs.height &&
+          player.y + player.height > obs.y
+        ) {
+          // Hit obstacle -> Trigger jumpscare instantly
+          triggerJumpscare();
+          return;
+        }
+
+        // Remove offscreen obstacles
+        if (obs.x + obs.width < 0) {
+          obstacles.splice(i, 1);
+        }
+      }
+
+      if (gameRunning) {
+        requestAnimationFrame(update);
+      }
+    }
+
     function triggerJumpscare() {
+      if (!gameRunning) return;
+      gameRunning = false;
+      clearInterval(scoreTimer);
+
       jumpscareOverlay.style.display = 'flex';
       jumpscareOverlay.classList.add('strobe', 'shake');
-      
-      if (ambientOsc) ambientOsc.stop();
       triggerJumpscareAudio();
 
-      // Trigger device vibration if supported
       if ("vibrate" in navigator) {
-        navigator.vibrate([500, 100, 500, 100, 800]);
+        navigator.vibrate([600, 100, 600, 100, 1000]);
       }
     }
   </script>
